@@ -1,0 +1,36 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/filter_title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textMultiLine"
+        android:layout_marginTop="3dp"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:textAllCaps="true"
+        android:paddingBottom="2dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:background="@color/transparent"/>
+
+    <View
+        android:id="@+id/navigator_slidetab_separator"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_below="@+id/navigator_view"
+        android:background="@color/translucent" />
+
+    <ListView
+        android:id="@+id/filter_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="none"
+        android:divider="@color/blue"
+        android:dividerHeight="0.5dp"/>
+
+</LinearLayout>

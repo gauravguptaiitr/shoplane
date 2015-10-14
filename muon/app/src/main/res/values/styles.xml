@@ -1,0 +1,60 @@
+<resources>
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Main theme colors -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
+        <!--item name="colorPrimaryLight">@color/primary_light</item>
+        <item name="primaryText">@color/primary_text</item>
+        <item name="secondaryText">@color/secondary_text</item>
+        <item name="icons">@color/icons</item>
+        <item name="divider">@color/divider</item>
+        <item name="navigationBarColor">@color/primary</item>
+        <item name="windowBackground">@color/darkGray</item -->
+        <item name="android:textViewStyle">@style/RobotoTextViewStyle</item>
+        <item name="android:buttonStyle">@style/RobotoButtonStyle</item>
+    </style>
+
+    <style name="AppFeedTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Main theme colors -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:textViewStyle">@style/RobotoTextViewStyle</item>
+        <item name="android:buttonStyle">@style/RobotoButtonStyle</item>
+        <item name="android:windowActionBar">false</item>
+
+    </style>
+
+    <style name="RobotoTextViewStyle" parent="android:Widget.TextView">
+        <item name="android:fontFamily">sans-serif-light</item>
+    </style>
+
+    <style name="RobotoButtonStyle" parent="android:Widget.Holo.Button">
+        <item name="android:fontFamily">sans-serif-light</item>
+    </style>
+
+    <!--style name="TextLabel" parent="TextAppearance.AppCompat">
+        <item name="android:textColorHint">@color/blue</item>
+        <item name="android:textColor">@color/blue</item>
+        <item name="android:textSize">20sp</item>
+        <item name="colorControlNormal">@color/blue</item>
+        <item name="colorControlActivated">@color/red</item>
+    </style-->
+
+    <style name="VerticalLine">
+        <item name="android:layout_width">1dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@color/white</item>
+        <item name="android:layout_marginLeft">1dp</item>
+        <item name="android:layout_marginRight">1dp</item>
+    </style>
+
+    <style name="toolbar_theme" parent="ThemeOverlay.AppCompat.Dark">
+        <item name="android:textColorSecondary">@color/white</item>
+        <item name="android:background">@color/primary</item>
+    </style>
+
+</resources>
+

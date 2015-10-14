@@ -1,0 +1,19 @@
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/filter_selection_item"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="10dp"
+        android:textColor="@color/black"
+        android:gravity="center_vertical"
+        android:textSize="12sp"
+        android:textAllCaps="true"
+        android:paddingBottom="1dp" />
+
+</FrameLayout>

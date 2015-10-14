@@ -1,0 +1,243 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/query_parent_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
+    android:background="@color/white"
+    android:orientation="vertical">
+
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/query_main_layout"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/style_navigator_layout"
+        android:background="@color/transparent"
+        android:focusableInTouchMode="true">
+
+        <com.rengwuxian.materialedittext.MaterialEditText
+            android:id="@+id/searchbox_search_query"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:ellipsize="start"
+            android:hint="@string/search_hint"
+            android:inputType="textMultiLine"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:textCursorDrawable="@xml/custom_cursor"
+            android:textSize="20sp"
+            app:met_baseColor="@color/black"
+            app:met_clearButton="true"
+            app:met_floatingLabel="highlight"
+            app:met_floatingLabelPadding="5dp"
+            app:met_floatingLabelTextSize="12sp"
+            app:met_hideUnderline="true"
+            app:met_primaryColor="@color/black"
+            app:met_textColor="@color/black"
+            app:met_textColorHint="@color/translucent" />
+
+        <View
+            android:id="@+id/edittext_list_separator"
+            android:layout_width="fill_parent"
+            android:layout_height="2dp"
+            android:layout_below="@+id/searchbox_search_query"
+            android:background="@color/translucent" />
+
+        <ListView
+            android:id="@+id/query_suggestion_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/edittext_list_separator"
+            android:clipToPadding="true"
+            android:divider="@color/blue"
+            android:dividerHeight="0.5dp"
+            android:footerDividersEnabled="false"
+            android:scrollbars="none" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/floating_home_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="5dp"
+            android:src="@drawable/ic_home" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/floating_filter_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="5dp"
+            android:src="@drawable/ic_filter"
+            android:visibility="gone" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/style_navigator_layout"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:background="@color/transparent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/style_filter_gridview"
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:layout_weight="4">
+
+            <TextView
+                android:id="@+id/styles_for_filter"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_alignParentTop="true"
+                android:layout_weight="1"
+                android:paddingLeft="5dp"
+                android:background="@color/transparent"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:text="style"
+                android:textAllCaps="true"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="2"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="fill_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:layout_alignParentTop="true"
+                    android:background="@color/transparent"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:text="Filters Selected"
+                    android:textAllCaps="true"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+
+                <GridView xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:id="@+id/filter_selection_gridview"
+                    android:layout_height="0dp"
+                    android:layout_weight="15"
+                    android:layout_width="fill_parent"
+                    android:columnWidth="100dp"
+                    android:gravity="center"
+                    android:horizontalSpacing="2dp"
+                    android:numColumns="auto_fit"
+                    android:scrollbars="none"
+                    android:verticalSpacing="2dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <View
+            android:id="@+id/scrollview_navigator_separator"
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:layout_below="@+id/style_filter_gridview"
+            android:background="@color/translucent" />
+
+        <LinearLayout
+            android:id="@+id/navigator_view"
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_below="@+id/scrollview_navigator_separator"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/style_back_button"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.2"
+                android:background="@xml/custom_transparent_button"
+                android:src="@drawable/ic_back_arrow" />
+
+            <TextView
+                android:id="@+id/style_title"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="bottom"
+                android:layout_marginTop="3dp"
+                android:layout_toEndOf="@+id/style_back_button"
+                android:layout_weight="6.4"
+                android:background="@color/transparent"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:gravity="center"
+                android:paddingBottom="0dp"
+                android:text="Styles"
+                android:textAllCaps="true"
+                android:textColor="@color/black"
+                android:textSize="16sp" />
+
+            <ImageButton
+                android:id="@+id/style_forward_button"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_toEndOf="@+id/style_title"
+                android:layout_weight="1.2"
+                android:background="@xml/custom_transparent_button"
+                android:src="@drawable/ic_forward_arrow" />
+
+            <ImageButton
+                android:id="@+id/style_down_button"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.2"
+                android:background="@xml/custom_transparent_button"
+                android:src="@drawable/ic_down_arrow" />
+
+        </LinearLayout>
+
+        <View
+            android:id="@+id/navigator_slidetab_separator"
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:layout_below="@+id/navigator_view"
+            android:background="@color/translucent" />
+
+
+        <com.shoplane.muon.common.utils.userinterface.SlidingTabLayout
+            android:id="@+id/filter_tabs"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@color/transparent" />
+
+        <android.support.v4.view.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/filter_pager"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="5.5"
+            android:layout_below="@+id/filter_tabs" />
+
+    </LinearLayout>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/floating_search_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="5dp"
+        android:layout_marginRight="5dp"
+        android:src="@drawable/ic_action_search" />
+
+</RelativeLayout>

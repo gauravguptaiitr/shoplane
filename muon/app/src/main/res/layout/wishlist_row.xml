@@ -1,0 +1,62 @@
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:attr/selectableItemBackground"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+
+        <com.android.volley.toolbox.NetworkImageView
+            android:id="@+id/search_list_column_image"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="3"
+            android:layout_gravity="top"
+            android:scaleType="centerCrop" />
+
+        <TextView
+            android:id="@+id/title_wishlist_row"
+            android:layout_width="0dp"
+            android:layout_weight="7"
+            android:layout_height="fill_parent"
+            android:layout_marginTop="1dp"
+            android:background="@color/white"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:gravity="top"
+            android:paddingBottom="1dp"
+            android:text="the ultimate collection of clothing"
+            android:textAllCaps="true"
+            android:textColor="@color/black"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="@color/material_deep_teal_500">
+
+        <ImageButton
+            android:id="@+id/wishlist_item_browser"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:background="@xml/custom_transparent_button"
+            android:src="@drawable/ic_chrome" />
+
+        <ImageButton
+            android:id="@+id/btn_wishlist_remove_item"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:background="@xml/custom_transparent_button"
+            android:src="@drawable/ic_remove" />
+
+    </LinearLayout>
+
+
+</LinearLayout>

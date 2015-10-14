@@ -1,0 +1,75 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/search_list_frame"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_gravity="center"
+    android:background="@color/white"
+    android:orientation="vertical">
+
+    <com.android.volley.toolbox.NetworkImageView
+        android:id="@+id/search_list_column_image"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:adjustViewBounds="true"
+        android:scaleType="centerCrop"
+        android:layout_gravity="center"/>
+
+    <TextView
+        android:id="@+id/search_item_title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/translucent"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:gravity="top|left"
+        android:paddingLeft="5dp"
+        android:text="mens check half sleeve shirt \n \nReebok"
+        android:textAllCaps="true"
+        android:textColor="@color/white"
+        android:textSize="16sp" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/material_deep_teal_500">
+
+            <ImageButton
+                android:id="@+id/search_item_browser"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:background="@xml/custom_transparent_button"
+                android:src="@drawable/ic_chrome" />
+
+            <ImageButton
+                android:id="@+id/search_item_add"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:background="@xml/custom_transparent_button"
+                android:src="@drawable/ic_like" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/search_item_specs"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@color/translucent"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:paddingLeft="5dp"
+            android:text="Color \nSize \nFit"
+            android:textAllCaps="true"
+            android:textColor="@color/white"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+</FrameLayout>

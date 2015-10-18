@@ -1,11 +1,7 @@
 package com.shoplane.muon.activities;
 
 import android.app.ProgressDialog;
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.Point;
-import android.net.Uri;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,7 +9,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,42 +16,33 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
 
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageRequest;
 import com.shoplane.muon.R;
 import com.shoplane.muon.adapters.SearchAdapter;
 import com.shoplane.muon.common.Constants;
-import com.shoplane.muon.common.handler.VolleyRequestHandler;
-//import com.shoplane.muon.activities.WishListActivity;
 import com.shoplane.muon.common.handler.WebSocketRequestHandler;
-import com.shoplane.muon.common.helper.FilterHelper;
-import com.shoplane.muon.common.utils.userinterface.ItemDecorationUtil;
 import com.shoplane.muon.interfaces.UpdateUITask;
-import com.shoplane.muon.models.CatalogueItem;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SearchActivity extends AppCompatActivity implements UpdateUITask{
+public class SearchActivity extends AppCompatActivity implements UpdateUITask {
 
     private final String TAG = SearchActivity.class.getSimpleName();
 
-
-    private String mServerUrl = "http://imagizer.imageshack.us/v2/1080x720q90/908/I41ZTq.jpg";
-    private List<CatalogueItem> mSearchItemList;
+    private List<JSONObject> mSearchItemList;
     private SearchAdapter mSearchAdapter;
     private RecyclerView mSearchRecyclerView;
     private LinearLayoutManager mSearchLayoutManager;
     private RecyclerView.ItemDecoration mSearchItemDecorator;
     private ProgressDialog mProgressDialog;
+    WeakReference<UpdateUITask> mActRef;
+    private boolean mIsActivityAvailable;
 
     // Snapping variables
     private float mItemWidth;
@@ -69,7 +55,8 @@ public class SearchActivity extends AppCompatActivity implements UpdateUITask{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
-
+        mActRef = new WeakReference<UpdateUITask>(this);
+        mIsActivityAvailable = true;
 
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -84,8 +71,8 @@ public class SearchActivity extends AppCompatActivity implements UpdateUITask{
         mSearchRecyclerView.setHasFixedSize(true);
 
         // Item decoration
-       // mSearchItemDecorator = new ItemDecorationUtil(10, false, false);
-       // mSearchRecyclerView.addItemDecoration(mSearchItemDecorator);
+        // mSearchItemDecorator = new ItemDecorationUtil(10, false, false);
+        // mSearchRecyclerView.addItemDecoration(mSearchItemDecorator);
 
         // Item animation
 
@@ -95,7 +82,7 @@ public class SearchActivity extends AppCompatActivity implements UpdateUITask{
         mSearchLayoutManager.scrollToPosition(0);
         mSearchRecyclerView.setLayoutManager(mSearchLayoutManager);
 
-        mSearchItemList = new ArrayList<CatalogueItem>();
+        mSearchItemList = new ArrayList<>();
 
         // Set proper size for search list columns
         DisplayMetrics displaymetrics = new DisplayMetrics();
@@ -111,7 +98,8 @@ public class SearchActivity extends AppCompatActivity implements UpdateUITask{
         mPadding = (screenWidth - mItemWidth) / 2;
         mPixelMovedX = 0;
 
-        mSearchAdapter = new SearchAdapter(this, mSearchItemList, layoutParams);
+        mSearchAdapter = new SearchAdapter(this, mSearchItemList, layoutParams, screenWidth,
+                screenHeight);
 
         ImageView searchListImageview = (ImageView) findViewById(R.id.search_list_imageview);
         searchListImageview.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.
@@ -122,7 +110,8 @@ public class SearchActivity extends AppCompatActivity implements UpdateUITask{
                 new SearchAdapter.OnItemClickListener() {
                     @Override
                     public void onItemClick(View view, int position) {
-                        openItemDetailActivity();
+                        // bundle json object representing catalogue item
+                        openItemDetailActivity(mSearchItemList.get(position));
 
                     }
                 });
@@ -204,16 +193,23 @@ public class SearchActivity extends AppCompatActivity implements UpdateUITask{
         }
     }
 
+    @Override
+    public void onDestroy() {
+        mIsActivityAvailable = false;
+        super.onDestroy();
+    }
+
     private void searchForQuery(String queryId) {
 
-        mProgressDialog.setMessage("Loading");
+        mProgressDialog.setMessage("Loading Search Results");
+        mProgressDialog.show();
+        String queryPath = "/search/result";
 
         JSONObject retrievequery = new JSONObject();
         try {
-            retrievequery.put("reqid", 1);
-            retrievequery.put("timestamp", System.currentTimeMillis());
+            // request id and ts for get request should be set in ring
             retrievequery.put("type", "get");
-            retrievequery.put("uri", "/search/result");
+            retrievequery.put("uri", queryPath);
 
             JSONObject params = new JSONObject();
             params.put("sruid", queryId);
@@ -223,14 +219,15 @@ public class SearchActivity extends AppCompatActivity implements UpdateUITask{
         } catch (JSONException je) {
             Log.e(TAG, "Failed to create retrieve request");
         }
-        Log.d(TAG, "Query is " + retrievequery.toString());
-        //WebSocketRequestHandler.getInstance(this).createAndSendGetRequestToServer(
-                //retrievequery.toString());
+        Log.i(TAG, "Query is " + retrievequery.toString());
+        WebSocketRequestHandler.getInstance().createAndSendGetRequestToServer(
+                retrievequery, mActRef, queryPath);
         Log.e(TAG, "Query sent");
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
         setIntent(intent);
         handleIntent(intent);
     }
@@ -278,8 +275,9 @@ public class SearchActivity extends AppCompatActivity implements UpdateUITask{
         startActivity(wishlistActivityIntent);
     }
 
-    private void openItemDetailActivity() {
+    private void openItemDetailActivity(JSONObject detailJson) {
         Intent itemDetailActivityIntent = new Intent(this, ItemDetailActivity.class);
+        itemDetailActivityIntent.putExtra(Constants.ITEM_DATA, detailJson.toString());
         startActivity(itemDetailActivityIntent);
         overridePendingTransition(0, 0);
     }
@@ -312,17 +310,34 @@ public class SearchActivity extends AppCompatActivity implements UpdateUITask{
     }
 
     @Override
-    public void updateUI(JSONObject dataTOUpdate) {
+    public boolean getActivityAvailableStatus() {
+        return mIsActivityAvailable;
+    }
 
-        /*for (CatalogueItem cItem : dataTOUpdate) {
-            mSearchItemList.add(1, cItem);
+    @Override
+    public void updateUI(JSONObject jsonResponse) {
+
+        Log.i(TAG, jsonResponse.toString());
+
+        try {
+            String searchId = jsonResponse.getString("sruid");
+            // styles and filterid
+            JSONArray cItemArray = jsonResponse.getJSONArray("result");
+            int cItemArrLen = cItemArray.length();
+            for (int i = 0; i < cItemArrLen; i++) {
+                mSearchItemList.add(0, (JSONObject) cItemArray.get(i));
+            }
+
+            mSearchAdapter.notifyDataSetChanged();
+            mSearchRecyclerView.scrollToPosition(1);
+
+        } catch (JSONException je) {
+            Log.e(TAG, "Failed to parse search results");
         }
-        mSearchAdapter.notifyDataSetChanged();
-        mSearchRecyclerView.scrollToPosition(1);
 
-        if(mProgressDialog.isShowing()) {
+        if (mProgressDialog.isShowing()) {
             mProgressDialog.dismiss();
-        }*/
+        }
 
     }
 }

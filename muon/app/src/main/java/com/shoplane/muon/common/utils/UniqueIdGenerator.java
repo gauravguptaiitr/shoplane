@@ -1,6 +1,6 @@
 package com.shoplane.muon.common.utils;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Random;
 
 /**
  * Created by ravmon on 1/10/15.
@@ -10,14 +10,14 @@ public class UniqueIdGenerator {
 
     private static UniqueIdGenerator uniqueIdGeneratorInstance;
 
-    private AtomicInteger seq;
+    Random mRandomLong;
 
     private UniqueIdGenerator() {
-        seq = new AtomicInteger(1);
+        this.mRandomLong = new Random();
     }
 
-    public int getUniqueId() {
-        return seq.incrementAndGet();
+    public String getUniqueId() {
+        return (mRandomLong.nextLong() + "");
     }
 
     public static synchronized UniqueIdGenerator getInstance() {

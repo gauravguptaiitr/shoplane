@@ -19,14 +19,11 @@ import java.util.List;
  */
 public class ItemDetailImagePagerAdapter extends FragmentPagerAdapter {
     private static final String TAG = ItemDetailImagePagerAdapter.class.getSimpleName();
-    private static int NUM_TABS = 5;
 
-    private Long mItemId;
     private List<String> mItemImageUrl;
 
-    public ItemDetailImagePagerAdapter(FragmentManager fm, Long itemId, List<String> imageUrl) {
+    public ItemDetailImagePagerAdapter(FragmentManager fm, List<String> imageUrl) {
         super(fm);
-        this.mItemId = itemId;
         this.mItemImageUrl = imageUrl;
     }
 
@@ -53,7 +50,7 @@ public class ItemDetailImagePagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public int getCount() {
-        return NUM_TABS;
+        return mItemImageUrl.size();
     }
 }
 

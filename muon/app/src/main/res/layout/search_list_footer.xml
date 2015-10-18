@@ -7,14 +7,14 @@
 
     <TextView
         android:id="@+id/search_footer_text"
-        android:layout_width="fill_parent"
+        android:layout_width="wrap_content"
         android:layout_height="fill_parent"
         android:textColor="@color/blue"
         android:gravity="center"
         android:textSize="50sp"
         android:textAllCaps="true"
         android:textStyle="bold"
-        android:text="DONE !!!"
+        android:text=""
         android:paddingLeft="1dp" />
 
 </FrameLayout>

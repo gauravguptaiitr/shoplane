@@ -18,7 +18,9 @@ import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
 import com.emilsjolander.components.StickyScrollViewItems.StickyScrollView;
 import com.shoplane.muon.R;
+import com.shoplane.muon.common.handler.SessionHandler;
 import com.shoplane.muon.common.handler.VolleyRequestHandler;
+import com.shoplane.muon.common.handler.WebSocketRequestHandler;
 
 
 public class FeedActivity extends AppCompatActivity {
@@ -109,6 +111,19 @@ public class FeedActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_feed, menu);
         return true;
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        // Close session handler editor
+        SessionHandler.getInstance(this).closeSessionHandler();
+
+        // Close websocket connection when home activity is destroyed
+        if(WebSocketRequestHandler.getInstance().getWebsocket() != null) {
+            WebSocketRequestHandler.getInstance().getWebsocket().close();
+        }
+
     }
 
     @Override

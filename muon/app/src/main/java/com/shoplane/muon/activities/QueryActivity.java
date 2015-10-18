@@ -48,8 +48,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-public class QueryActivity extends AppCompatActivity implements UpdateUITask{
+public class QueryActivity extends AppCompatActivity implements UpdateUITask {
     private static final String TAG = QueryActivity.class.getSimpleName();
 
     private static final String ENTER_QUERY = "Please enter a query to search";
@@ -67,7 +68,7 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
     private int mFilterPosition;
     private boolean mIsStyleDisplayed;
     private int mStylesLeftToDisplay;
-    private int mUniqueQueryId;
+    private String mUniqueQueryId;
     WeakReference<UpdateUITask> mActRef;
     private boolean mIsActivityAvailable;
 
@@ -175,9 +176,8 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
                             // update filters only when styles changes
                             filterButton.setVisibility(View.VISIBLE);
                         }
-
                         updateFilterMapForSelection(mStyleSelected);
-
+                        mQuerySendScheduler.resetTask();
                     } else {
                         mStyleItemSelectionList.set(position, false);
                         view.setBackgroundColor(mUnselectedBkgColor);
@@ -187,6 +187,7 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
                             filterButton.setVisibility(View.GONE);
                         }
                         updateFilterMapForSelection(mStyleSelected);
+                        mQuerySendScheduler.resetTask();
                     }
                 }
             }
@@ -299,8 +300,6 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
         });
         getDefaultQuerySuggestion();
         mQuerySendScheduler = new QuerySendScheduler(1000);
-
-        // check for bundled intent as activity
 
     }
 
@@ -468,10 +467,14 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
         String currentFilter = mStyleFilters.get(mFilterPosition).toLowerCase().trim();
         mCurrentStyleView.setText(currentFilter);
 
+        Log.i(TAG, "filter text updated");
+
         Long filterId = getCurrentFilterId();
         // get styles for filterid
         List<String> styleList = mFilterIdToStylesMap.get(filterId);
         // Show styles for filter
+
+        Log.i(TAG, "filter id updated");
         StringBuilder styleText = new StringBuilder();
         styleText.append("STYLES \n");
         for (String style : styleList) {
@@ -484,12 +487,15 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
         mFilterPagerAdapter.setFilterId(filterId);
         mFilterPagerAdapter.notifyDataSetChanged();
 
+        Log.i(TAG, "style text updated");
         // Update filters
         mFilterSelectionItemList.clear();
-        mFilterSelectionItemList.addAll(FilterHelper.getFilterHelperInstance().
-                getFilterSelectionList(filterId, "color"));
-        mFilterSelectionItemList.addAll(FilterHelper.getFilterHelperInstance().
-                getFilterSelectionList(filterId, "size"));
+        Set<String> selectedFilterTypes = FilterHelper.getFilterHelperInstance().
+                getSelectedFiltersKeys(filterId);
+        for (String key : selectedFilterTypes) {
+            mFilterSelectionItemList.addAll(FilterHelper.getFilterHelperInstance().
+                    getFilterSelectionList(filterId, key));
+        }
         mFilterSelectionAdapter.notifyDataSetChanged();
     }
 
@@ -547,12 +553,12 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
 
         JSONObject updatequery = new JSONObject();
         try {
-            updatequery.put("reqid", "250");
+            updatequery.put("reqid", Integer.MAX_VALUE + "");
             updatequery.put("type", "post");
             updatequery.put("uri", "/query/update");
 
             JSONObject params = new JSONObject();
-            params.put("sruid", mUniqueQueryId + "");
+            params.put("sruid", mUniqueQueryId);
 
             JSONObject query = new JSONObject();
             query.put("queryStr", mSearchText.getText());
@@ -560,19 +566,24 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
             JSONObject styles = new JSONObject();
             for (String style : mStyleSelected) {
                 styles.put(style, FilterHelper.getFilterHelperInstance().
-                        getFilterIdForStyle(style));
+                        getFilterIdForStyle(style) + "");
             }
             query.put("styles", styles);
 
             JSONObject filters = new JSONObject();
             for (String styleFilter : mStyleFilters) {
                 JSONObject filterIdObj = new JSONObject();
+
                 Long filterId = FilterHelper.getFilterHelperInstance().
                         getFilterIdForFilterTitle(styleFilter);
 
+                filterIdObj.put("filterTitle", FilterHelper.getFilterHelperInstance().
+                        getFilterTitleForFilterId(filterId));
+
                 JSONArray filterTypeColor = new JSONArray();
-                List<String> values= FilterHelper.getFilterHelperInstance().
-                        getFilterSelectionList(filterId, "color");
+                List<String> values = new ArrayList<>();
+                values.addAll(FilterHelper.getFilterHelperInstance().
+                        getFilterSelectionList(filterId, "colors"));
                 for (String value : values) {
                     filterTypeColor.put(value);
                 }
@@ -580,15 +591,13 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
 
                 values.clear();
                 JSONArray filterTypeSize = new JSONArray();
-                values = FilterHelper.getFilterHelperInstance().
-                        getFilterSelectionList(filterId, "size");
+                values.addAll(FilterHelper.getFilterHelperInstance().
+                        getFilterSelectionList(filterId, "sizes"));
                 for (String value : values) {
                     filterTypeSize.put(value);
                 }
-                filterIdObj.put("size", filterTypeSize);
-
+                filterIdObj.put("sizes", filterTypeSize);
                 filters.put(filterId.toString(), filterIdObj);
-
             }
 
             query.put("filters", filters);
@@ -599,7 +608,7 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
             Log.e(TAG, "Failed to create request");
         }
         Log.e(TAG, "Query is " + updatequery.toString());
-        WebSocketRequestHandler.getInstance(this).createAndSendPostRequestToServer(
+        WebSocketRequestHandler.getInstance().createAndSendPostRequestToServer(
                 updatequery.toString(), mActRef, Constants.QUERY_SUGGESTION_STYLES_PATH);
         Log.e(TAG, "Query sent");
     }
@@ -622,6 +631,8 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
         // process query suggestions
         final Map<String, Long> styleToFilterId;
         final Map<Long, Map<String, List<String>>> filterIdToFilterMap;
+        final Map<Long, String> filterIdToFilterTitleMap;
+        final Map<String, Long> filterTitleToFilterIdMap;
         final List<String> styleList;
 
         Log.e(TAG, jsonResponse.toString());
@@ -634,13 +645,16 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
             Iterator<String> styleIt = styles.keys();
             while(styleIt.hasNext()) {
                 String key = styleIt.next();
-                styleList.add(key);
-                styleToFilterId.put(key, styles.getLong(key));
+                styleList.add(key.trim().toLowerCase());
+                styleToFilterId.put(key.trim().toLowerCase(), styles.getLong(key));
             }
 
             // filter id and filters
             JSONObject filters = jsonResponse.getJSONObject("filters");
             filterIdToFilterMap = new HashMap<>();
+            filterIdToFilterTitleMap = new HashMap<>();
+            filterTitleToFilterIdMap = new HashMap<>();
+
             Iterator<String> filterIt = filters.keys();
             while(filterIt.hasNext()) {
                 String key = filterIt.next();
@@ -648,7 +662,14 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
                 filterIdToFilterMap.put(keyInLong, new HashMap<String, List<String>>());
 
                 JSONObject singleFilter = filters.getJSONObject(key);
+
+                String filterTiltle = singleFilter.getString("filterTitle");
+                filterIdToFilterTitleMap.put(keyInLong, filterTiltle.trim().toLowerCase());
+                filterTitleToFilterIdMap.put(filterTiltle.trim().toLowerCase(), keyInLong);
+
                 Iterator<String> filterTypesIt = singleFilter.keys();
+                // skip title
+                filterTypesIt.next();
 
                 while(filterTypesIt.hasNext()) {
                     String filterType = filterTypesIt.next();
@@ -657,11 +678,11 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
                     List<String> filterValues = new ArrayList<>();
                     int len = filterValuesJson.length();
                     for (int i = 0; i < len; i++){
-                        filterValues.add(filterValuesJson.get(i).toString());
+                        filterValues.add(filterValuesJson.get(i).toString().trim().toLowerCase());
                     }
 
-                    filterIdToFilterMap.get(keyInLong).put(filterType,
-                            new ArrayList<String>(filterValues));
+                    filterIdToFilterMap.get(keyInLong).put(filterType.trim().toLowerCase(),
+                            new ArrayList<>(filterValues));
                 }
             }
 
@@ -675,7 +696,7 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
         mTotalSuggestedItems.addAll(styleList);
         mStylesLeftToDisplay = mTotalSuggestedItems.size();
         FilterHelper.getFilterHelperInstance().updateFilters(styleToFilterId,
-                filterIdToFilterMap);
+                filterIdToFilterMap, filterIdToFilterTitleMap, filterTitleToFilterIdMap);
         getStyleSuggestionList();
     }
 
@@ -725,7 +746,7 @@ public class QueryActivity extends AppCompatActivity implements UpdateUITask{
     }
 
     // Query sending to server
-    private int getUniqueQueryIdentifier() {
+    private String getUniqueQueryIdentifier() {
         return UniqueIdGenerator.getInstance().getUniqueId();
     }
 }

@@ -3,18 +3,13 @@ package com.shoplane.muon.adapters;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.DisplayMetrics;
-import android.view.Gravity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,10 +17,11 @@ import android.widget.Toast;
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
 import com.shoplane.muon.R;
-import com.shoplane.muon.common.Constants;
 import com.shoplane.muon.common.handler.VolleyRequestHandler;
-import com.shoplane.muon.common.helper.WishlistHelper;
-import com.shoplane.muon.models.CatalogueItem;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -34,13 +30,16 @@ import java.util.List;
  */
 public class SearchAdapter
         extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final String TAG = SearchAdapter.class.getSimpleName();
 
     private final Context mContext;
-    private List<CatalogueItem> mSearchItemList;
+    private List<JSONObject> mSearchItemList;
     private static OnItemClickListener mSearchItemClickListener;
     private int prevItemPosition = 0;
     private ImageLoader mImageLoader;
     private LinearLayout.LayoutParams mLayoutParams;
+    private int mScreenWidth;
+    private int mScreenHeight;
 
     // Item type
     private static final int TYPE_HEADER = 0;
@@ -94,7 +93,7 @@ public class SearchAdapter
                 @Override
                 public void onClick(View itemView) {
                     if (mSearchItemClickListener != null)
-                        mSearchItemClickListener.onItemClick(itemView, getLayoutPosition());
+                        mSearchItemClickListener.onItemClick(itemView, getLayoutPosition() - 1);
                 }
             });
 
@@ -102,15 +101,20 @@ public class SearchAdapter
             mItemAddButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View addItemButton) {
-                    WishlistHelper.getWishlist().addItem(mSearchItemList.get(
-                            getAdapterPosition() - 1));
+                    //WishlistHelper.getWishlist().addItem(mSearchItemList.get(
+                           // getAdapterPosition() - 1));
                 }
             });
 
             // Open item in browser
             mSearchItemBrowser.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View searchItemButton) {
-                    //openItemInBrowser(mSearchItemList.get((getAdapterPosition() - 1)).getImageUrl());
+                    try {
+                        openItemInBrowser(mSearchItemList.get((getAdapterPosition() - 1)).
+                                getString("itemUrl"));
+                    } catch (JSONException je) {
+                        Log.e(TAG, "Failed to get item Url");
+                    }
                 }
 
             });
@@ -119,11 +123,14 @@ public class SearchAdapter
         }
     }
 
-    public SearchAdapter(Context context, List<CatalogueItem> searchItemList,
-                         LinearLayout.LayoutParams layoutParams) {
+    public SearchAdapter(Context context, List<JSONObject> searchItemList,
+                         LinearLayout.LayoutParams layoutParams, int screenWidth,
+                         int screenHeight) {
         this.mContext = context;
         this.mSearchItemList = searchItemList;
         this.mLayoutParams = layoutParams;
+        this.mScreenWidth = screenWidth;
+        this.mScreenHeight = screenHeight;
         mImageLoader = VolleyRequestHandler.getVolleyRequestHandlerInstance(mContext).
                 getImageLoader();
     }
@@ -134,14 +141,18 @@ public class SearchAdapter
         if (TYPE_HEADER == viewType) {
             View headerView = LayoutInflater.from(parent.getContext()).
                     inflate(R.layout.search_list_header, parent, false);
-            headerView.setLayoutParams(mLayoutParams);
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams((int)
+                    (mScreenWidth * 0.05), (int) (mScreenHeight * 0.8));
+            headerView.setLayoutParams(layoutParams);
             //TextView headerText = (TextView) headerView.findViewById(R.id.search_header_text);
             //headerText.setGravity(Gravity.CENTER);
             return new ViewHolderHeader(headerView);
         } else if (TYPE_FOOTER == viewType) {
             View footerView = LayoutInflater.from(parent.getContext()).
                     inflate(R.layout.search_list_footer, parent, false);
-            footerView.setLayoutParams(mLayoutParams);
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams((int)
+                    (mScreenWidth * 0.05), (int) (mScreenHeight * 0.8));
+            footerView.setLayoutParams(layoutParams);
             //TextView footerText = (TextView) footerView.findViewById(R.id.search_footer_text);
             //footerText.setGravity(Gravity.CENTER);
             return new ViewHolderFooter(footerView);
@@ -158,8 +169,43 @@ public class SearchAdapter
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof ViewHolderItem) {
-            //((ViewHolderItem) holder).mSearchImgView.setImageUrl(mSearchItemList.get(position - 1).
-                  //  getImageUrl(), mImageLoader);
+            // populate item here
+            JSONObject item = mSearchItemList.get(position -1);
+            try {
+                JSONArray jsonArr = item.getJSONArray("styles");
+                StringBuilder text  = new StringBuilder();
+                // Style and brand
+                int len = jsonArr.length();
+                for (int i = 0; i < len - 1; i++) {
+                    text.append(jsonArr.getString(i));
+                    text.append("-");
+                }
+                text.append(jsonArr.get(len - 1));
+                text.append("\n\n");
+                text.append(item.getString("brand"));
+                ((ViewHolderItem) holder).mSearchItemTitle.setText(text.toString());
+
+                // title and size
+                text.setLength(0);
+                text.append(item.getString("title"));
+                text.append("\n\n");
+
+                jsonArr = item.getJSONArray("sizes");
+                len = jsonArr.length();
+                for (int i = 0; i < len - 1; i++) {
+                    text.append(jsonArr.getString(i));
+                    text.append("-");
+                }
+                text.append(jsonArr.getString(len - 1));
+                ((ViewHolderItem) holder).mSearchItemSpecs.setText(text.toString());
+
+                JSONObject imageUrl = item.getJSONObject("images");
+                ((ViewHolderItem) holder).mSearchImgView.setImageUrl(imageUrl.getString("primary"),
+                        mImageLoader);
+
+            } catch (JSONException je) {
+               Log.e(TAG, "Failed to load data for item position " + position);
+            }
 
         }
     }
@@ -185,9 +231,9 @@ public class SearchAdapter
     }
 
     private void openItemInBrowser(String itemUrl) {
-        String itemPage = "www.google.com";
+        String itemPage = itemUrl;
         if (!itemPage.startsWith("http://") && !itemPage.startsWith("https://"))
-            itemPage = "http://" + itemPage;
+            itemPage = "https://" + itemPage;
 
         try {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW,
@@ -206,7 +252,7 @@ public class SearchAdapter
     }
 
     // Add a list of items
-    public void addAll(List<CatalogueItem> searchItemList) {
+    public void addAll(List<JSONObject> searchItemList) {
         mSearchItemList.addAll(searchItemList);
         notifyDataSetChanged();
     }

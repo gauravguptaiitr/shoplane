@@ -97,4 +97,56 @@ public class CatalogueItem {
     public long getmPrice() {
         return mPrice;
     }
+
+    public void setmPrice(long mPrice) {
+        this.mPrice = mPrice;
+    }
+
+    public void setmColors(List<String> mColors) {
+        this.mColors = mColors;
+    }
+
+    public void setmSizes(List<String> mSizes) {
+        this.mSizes = mSizes;
+    }
+
+    public void setmBrand(String mBrand) {
+        this.mBrand = mBrand;
+    }
+
+    public void setmTitle(String mTitle) {
+        this.mTitle = mTitle;
+    }
+
+    public void setmAltImageUrl(List<String> mAltImageUrl) {
+        this.mAltImageUrl = mAltImageUrl;
+    }
+
+    public void setmPrimaryImageUrl(String mPrimaryImageUrl) {
+        this.mPrimaryImageUrl = mPrimaryImageUrl;
+    }
+
+    public void setmItemUrl(String mItemUrl) {
+        this.mItemUrl = mItemUrl;
+    }
+
+    public void setmStyleTips(String mStyleTips) {
+        this.mStyleTips = mStyleTips;
+    }
+
+    public void setmDesc(String mDesc) {
+        this.mDesc = mDesc;
+    }
+
+    public void setmStyle(String mStyle) {
+        this.mStyle = mStyle;
+    }
+
+    public void setmVarId(long mVarId) {
+        this.mVarId = mVarId;
+    }
+
+    public void setmCuid(long mCuid) {
+        this.mCuid = mCuid;
+    }
 }

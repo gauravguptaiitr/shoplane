@@ -25,6 +25,7 @@ public final class Constants {
 
     public static final String OPEN_QUERY_FILTER = "open_query_filter";
     public static final String OPEN_QUERY_BOX = "open_query_box";
+    public static final String ITEM_DATA = "item_data";
 
 
     public static final String QUERY_SUGGESTION_STYLES_PATH = "/query/suggestions/styles";

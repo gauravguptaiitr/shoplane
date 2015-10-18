@@ -1,12 +1,7 @@
 package com.shoplane.muon.common.helper;
 
-import android.view.View;
 
-import com.shoplane.muon.common.service.DeleteRequestService;
-import com.shoplane.muon.common.service.GetRequestService;
-import com.shoplane.muon.common.service.UpdateRequestService;
-import com.shoplane.muon.models.CatalogueItem;
-import com.shoplane.muon.models.WishlistItem;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,15 +14,15 @@ import java.util.Set;
  * Created by ravmon on 2/9/15.
  */
 public class FilterHelper {
+    private static final String TAG = FilterHelper.class.getSimpleName();
+
     private static FilterHelper mFilterHelperInstance;
-    private long mQueryFilterUid;
     private Map<String, Long> mStyleToFilterIdMap;
     private Map<Long, Map<String, List<String>>> mFilterIdToFiltersMap;
     private Map<Long, Map<String, List<Boolean>>> mFiltertSelectionMap;
     private Map<Long, Map<String, List<String>>> mFilterSelecttionListMap;
     private Map<Long, String> mFilterIdToTitleMap;
     private Map<String, Long> mFilterTitleToIdMap;
-    private static final String mServerUrl = "dummy";
     private Set<String> mValidFilters;
 
     public static FilterHelper getFilterHelperInstance() {
@@ -39,8 +34,7 @@ public class FilterHelper {
     }
 
     private FilterHelper() {
-        // TODO: Get data from server with userid
-        mQueryFilterUid = 1L;
+
         mStyleToFilterIdMap = new HashMap<>();
         mFilterIdToFiltersMap = new HashMap<>();
         mFiltertSelectionMap = new HashMap<>();
@@ -63,7 +57,9 @@ public class FilterHelper {
 
 
     public void updateFilters(Map<String, Long> styleToFilterId,
-                              Map<Long, Map<String, List<String>>> filterIdToFilterMap) {
+                              Map<Long, Map<String, List<String>>> filterIdToFilterMap,
+                              Map<Long, String> filterIdToTitleMap,
+                              Map<String, Long> filterTitleToIdMap) {
         mStyleToFilterIdMap.clear();
         mFilterIdToFiltersMap.clear();
         mFilterIdToTitleMap.clear();
@@ -72,14 +68,17 @@ public class FilterHelper {
 
         mStyleToFilterIdMap.putAll(styleToFilterId);
         mFilterIdToFiltersMap.putAll(filterIdToFilterMap);
-
-        for (long key : filterIdToFilterMap.keySet()) {
-            mFilterIdToTitleMap.put(key, "shirt filter");
-        }
+        mFilterIdToTitleMap.putAll(filterIdToTitleMap);
+        mFilterTitleToIdMap.putAll(filterTitleToIdMap);
 
         for (long filterIdKey : filterIdToFilterMap.keySet() ) {
             mFiltertSelectionMap.put(filterIdKey, new HashMap<String, List<Boolean>>());
+            mFilterSelecttionListMap.put(filterIdKey, new HashMap<String, List<String>>());
             for (String filterTypeKey : mFilterIdToFiltersMap.get(filterIdKey).keySet()) {
+                // add type to selection map
+                mFilterSelecttionListMap.get(filterIdKey).put(filterTypeKey,
+                        new ArrayList<String>());
+                // addboolean values
                 int lenOfTypeValues = mFilterIdToFiltersMap.get(filterIdKey).
                         get(filterTypeKey).size();
 
@@ -89,15 +88,13 @@ public class FilterHelper {
                 }
 
                 mFiltertSelectionMap.get(filterIdKey).put(filterTypeKey,
-                        new ArrayList<Boolean>(boolValues));
+                        new ArrayList<>(boolValues));
             }
         }
 
     }
 
     public Map<Long, List<String>> getFiltersForStyles(List<String> styles) {
-
-
         Map<Long, List<String>> filterToStylesMap = new HashMap<>();
         for (String style : styles) {
             style = style.toLowerCase().trim();
@@ -107,7 +104,7 @@ public class FilterHelper {
             } else {
                 List<String> styleList = new ArrayList<>();
                 styleList.add(style);
-                filterToStylesMap.put(filterIdForStyle, new ArrayList<String>(styleList));
+                filterToStylesMap.put(filterIdForStyle, new ArrayList<>(styleList));
             }
         }
         return filterToStylesMap;
@@ -118,44 +115,42 @@ public class FilterHelper {
     }
 
     public Long getFilterIdForFilterTitle(String filterTitle) {
-        filterTitle = filterTitle.toLowerCase().trim();
-        return mFilterTitleToIdMap.get(filterTitle);
+        return mFilterTitleToIdMap.get(filterTitle.trim().toLowerCase());
     }
 
     public Boolean getFilterValueSelectionStatus(Long filterId, String filterType,
                                                  int filterValuePosition) {
-        return mFiltertSelectionMap.get(filterId).get(filterType).get(filterValuePosition);
+        return mFiltertSelectionMap.get(filterId).get(filterType.trim().toLowerCase()).
+                get(filterValuePosition);
     }
 
     public void setFilterValueSelectionStatus(Long filterId, String filterType,
                                                  int filterValuePosition, boolean value) {
-        mFiltertSelectionMap.get(filterId).get(filterType).set(filterValuePosition, value);
-    }
-
-    public List<Boolean> getFilterTypeSelectionStatus(Long filterId, String filterType) {
-        return mFiltertSelectionMap.get(filterId).get(filterType);
+        mFiltertSelectionMap.get(filterId).get(filterType.trim().toLowerCase()).
+                set(filterValuePosition, value);
     }
 
     public void addFilterToSelectionList(Long filterId, String filterGroup, String filterValue){
-        if (mFilterSelecttionListMap.get(filterId).containsKey(filterGroup)) {
-            mFilterSelecttionListMap.get(filterId).get(filterGroup).add(filterValue);
-        } else {
-            mFilterSelecttionListMap.get(filterId).put(filterGroup, new ArrayList<String>());
-            mFilterSelecttionListMap.get(filterId).get(filterGroup).add(filterValue);
-        }
+        mFilterSelecttionListMap.get(filterId).get(filterGroup.trim().toLowerCase()).
+                add(filterValue.trim().toLowerCase());
+        Log.i(TAG, mFilterSelecttionListMap.toString());
     }
 
     public void removeFilterFromSelectionList(Long filterId, String filterGroup,
                                               String filterValue) {
-        mFilterSelecttionListMap.get(filterId).get(filterGroup).remove(filterValue);
+        mFilterSelecttionListMap.get(filterId).get(filterGroup.trim().toLowerCase()).
+                remove(filterValue.trim().toLowerCase());
     }
 
     public List<String> getFilterSelectionList(Long filterId, String filterGroup) {
-        return mFilterSelecttionListMap.get(filterId).get(filterGroup);
+        return mFilterSelecttionListMap.get(filterId).get(filterGroup.trim().toLowerCase());
     }
 
     public long getFilterIdForStyle(String style) {
-        style = style.trim().toLowerCase();
-        return mStyleToFilterIdMap.get(style);
+        return mStyleToFilterIdMap.get(style.trim().toLowerCase());
+    }
+
+    public Set<String> getSelectedFiltersKeys(Long filterId) {
+        return mFilterSelecttionListMap.get(filterId).keySet();
     }
 }

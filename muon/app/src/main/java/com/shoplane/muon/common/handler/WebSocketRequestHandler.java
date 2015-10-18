@@ -1,72 +1,56 @@
 package com.shoplane.muon.common.handler;
 
-import android.app.Activity;
-import android.content.Context;
-import android.net.wifi.WifiManager;
+
 import android.os.Handler;
 import android.os.Looper;
-import android.text.format.Formatter;
 import android.util.Log;
-import android.widget.Toast;
 
-import com.koushikdutta.async.AsyncServer;
-import com.koushikdutta.async.AsyncSocket;
-import com.koushikdutta.async.ByteBufferList;
 import com.koushikdutta.async.callback.CompletedCallback;
-import com.koushikdutta.async.callback.DataCallback;
-import com.koushikdutta.async.callback.WritableCallback;
 import com.koushikdutta.async.http.AsyncHttpClient;
 import com.koushikdutta.async.http.WebSocket;
-import com.shoplane.muon.activities.QueryActivity;
 import com.shoplane.muon.common.Constants;
 import com.shoplane.muon.common.communication.Ring;
-import com.shoplane.muon.common.utils.JsonReadUtil;
 import com.shoplane.muon.interfaces.UpdateUITask;
+import com.shoplane.muon.interfaces.WebsocketConnectionStatus;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 
 /**
  * Created by ravmon on 24/8/15.
  */
 public class WebSocketRequestHandler {
     private static final String TAG = WebSocketRequestHandler.class.getSimpleName();
-    private static final String WEB_SOCKET_CONNECTION_URL = "192.168.0.107";
+    private static final String WEB_SOCKET_CONNECTION_URL = "192.168.0.103";
     private static final int SERVER_PORT = 9000;
     private static final String CONNECTION_TOKEN_FORMAT = "/stream?accessToken=";
 
 
-    private AsyncHttpClient mAsyncHttpClient;
     private boolean mIsConnectedToServer;
     private WebSocket mWebsocket;
     private Ring mRing;
-    private Context mContext;
     private String mAuthServerToken;
 
-    private AsyncHttpClient.WebSocketConnectCallback mWebSocketConnectCallback;
     private static WebSocketRequestHandler mWebSocketHandlerInstance;
 
-    public static WebSocketRequestHandler getInstance(Context context) {
+    public synchronized static WebSocketRequestHandler getInstance() {
         if (null == mWebSocketHandlerInstance) {
-            mWebSocketHandlerInstance = new WebSocketRequestHandler(context);
+            mWebSocketHandlerInstance = new WebSocketRequestHandler();
         }
         return mWebSocketHandlerInstance;
     }
 
-    private WebSocketRequestHandler(final Context context) {
+    public void setAuthServerToken(String authServerToken) {
+        this.mAuthServerToken = authServerToken;
+    }
+
+    private WebSocketRequestHandler() {
         mIsConnectedToServer = false;
+
         mWebsocket = null;
         mRing = new Ring(4);
-        this.mContext = context;
         this.mAuthServerToken = null;
     }
 
@@ -74,17 +58,24 @@ public class WebSocketRequestHandler {
         return mIsConnectedToServer;
     }
 
-    public void connectToServer(String authToken) {
+    public WebSocket getWebsocket() {
+        return mWebsocket;
+    }
+
+    public void connectToServer(String authToken,
+                                final WebsocketConnectionStatus websocketConnectionStatus) {
         String hostAddr = "ws://" + WEB_SOCKET_CONNECTION_URL + ":" + SERVER_PORT +
                 CONNECTION_TOKEN_FORMAT + authToken;
         mAuthServerToken = authToken;
 
-        mWebSocketConnectCallback = new AsyncHttpClient.WebSocketConnectCallback() {
+        AsyncHttpClient.WebSocketConnectCallback mWebSocketConnectCallback =
+                new AsyncHttpClient.WebSocketConnectCallback() {
             @Override
             public void onCompleted(Exception ex, WebSocket webSocket) {
                 if (ex != null) {
                     Log.e(TAG, "Failed to connect to Server");
-                    mIsConnectedToServer= false;
+                    mIsConnectedToServer = false;
+                    websocketConnectionStatus.onWebsocketConnected();
                     return;
                 }
                 mIsConnectedToServer = true;
@@ -95,47 +86,75 @@ public class WebSocketRequestHandler {
                 webSocket.setClosedCallback(new CompletedCallback() {
                     @Override
                     public void onCompleted(Exception e) {
-                        Log.d(TAG, "websocket connection closed " + e);
+                        Log.i(TAG, "websocket connection closed " + e);
                         mIsConnectedToServer = false;
+                        mWebsocket = null;
                     }
                 });
 
                 webSocket.setEndCallback(new CompletedCallback() {
                     @Override
                     public void onCompleted(Exception e) {
-                        Log.d(TAG, "websocket connection ended " + e);
+                        Log.i(TAG, "websocket connection ended " + e);
                         mIsConnectedToServer = false;
+                        mWebsocket = null;
                     }
                 });
 
+                websocketConnectionStatus.onWebsocketConnected();
             }
         };
 
-        mAsyncHttpClient = AsyncHttpClient.getDefaultInstance();
+        AsyncHttpClient mAsyncHttpClient = AsyncHttpClient.getDefaultInstance();
         mAsyncHttpClient.websocket(hostAddr, null, mWebSocketConnectCallback);
     }
 
-    public WebSocket getWebsocket() {
-        return mWebsocket;
-    }
+    public void createAndSendGetRequestToServer(final JSONObject requestJson,
+                                                WeakReference<UpdateUITask> actRef,
+                                                final String queryPath) {
 
-    public void createAndSendGetRequestToServer(String request, Activity weakRef) {
-
-    }
-
-    public void createAndSendPostRequestToServer(String request,
-                                                 WeakReference<UpdateUITask> actWeakRef,
-                                                 String queryPath) {
-
-        if (!mIsConnectedToServer) {
-            connectToServer(mAuthServerToken);
+        // get and put request id in json
+        final String request = mRing.registerRequest(requestJson, actRef, queryPath);
+        if (!mIsConnectedToServer || null == mWebsocket) {
+            connectToServer(mAuthServerToken, new WebsocketConnectionStatus() {
+                @Override
+                public void onWebsocketConnected() {
+                    if(mIsConnectedToServer && mWebsocket != null) {
+                        Log.i(TAG, "Get Request is " + request);
+                        mWebsocket.send(request);
+                    } else {
+                        Log.e(TAG, "Failed to send post request to server");
+                    }
+                }
+            });
+        } else {
+            Log.i(TAG, "Get Request is " + request);
+            mWebsocket.send(request);
         }
 
-        if(mIsConnectedToServer) {
-            mRing.addTaskToUpdateUIForPostRequest(queryPath.trim().toLowerCase(), actWeakRef);
-            mWebsocket.send(request);
+    }
+
+    public void createAndSendPostRequestToServer(final String request,
+                                                 final WeakReference<UpdateUITask> actWeakRef,
+                                                 final String queryPath) {
+
+        if (!mIsConnectedToServer || null == mWebsocket) {
+            connectToServer(mAuthServerToken, new WebsocketConnectionStatus() {
+                @Override
+                public void onWebsocketConnected() {
+                    if(mIsConnectedToServer && mWebsocket != null) {
+                        mRing.addTaskToUpdateUIForPostRequest(queryPath.trim().toLowerCase(),
+                                actWeakRef);
+                        mWebsocket.send(request);
+                    } else {
+                        Log.e(TAG, "Failed to send post request to server");
+                    }
+                }
+            });
         } else {
-            Log.e(TAG, "Failed to send post request to server");
+            mRing.addTaskToUpdateUIForPostRequest(queryPath.trim().toLowerCase(),
+                    actWeakRef);
+            mWebsocket.send(request);
         }
     }
 
@@ -152,12 +171,40 @@ public class WebSocketRequestHandler {
                 new Handler(Looper.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
-                        Log.d("UI thread", "Run query activity update task on UI thread");
+                        Log.i("UI thread", "Run query activity update task on UI thread " +
+                        messageType);
                         task.updateUI(jsonResponse);
                     }
                 });
             }
 
+        }
+    }
+
+    private void processGetResponse(final JSONObject jsonResponse, final String responseType,
+                                    final int reqid) {
+        if (mRing.isRequestActive(reqid)) {
+            //TODO race codition resolution
+            WeakReference<UpdateUITask> taskRef = mRing.getTaskToUpdateUIForGetRequest(reqid);
+            if (taskRef != null) {
+                final UpdateUITask task = taskRef.get();
+                if (task != null && task.getActivityAvailableStatus()) {
+
+                    //run update task asociated with the request
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.i(TAG, "Run get request update task on UI thread " + reqid +
+                                    " " + responseType);
+                            task.updateUI(jsonResponse);
+                        }
+                    });
+                } else {
+                    Log.i(TAG, "Activity not available");
+                }
+            } else {
+                Log.i(TAG, "UpdateUi reference cleared");
+            }
         }
     }
 
@@ -170,40 +217,35 @@ public class WebSocketRequestHandler {
             JSONObject responseObject;
             try {
                 responseObject = new JSONObject(response);
-                String type = responseObject.getString("messageType");
-                if (type != null) {
-                    processPostResponse(responseObject, type);
+
+                // Post Request
+                Log.i(TAG, response);
+
+                boolean requestType = responseObject.has("messageType");
+                if (requestType) {
+                    Log.i(TAG, "Process post request");
+                    String messageType = responseObject.getString("messageType");
+                    processPostResponse(responseObject.getJSONObject("data"),
+                            messageType.trim().toLowerCase());
                     return;
                 }
-            } catch (JSONException je) {
-                Log.e(TAG, "Failed to get messagetype");
-                return;
-            }
 
-            // check request type to see if it is a message from server
-
-
-
-            /*if (0 < reqId || 8 > reqId) {
-                Log.e(TAG, "Response do not have valid request id");
-                return;
-            }
-
-            // check if request is active
-            if (!mRing.isRequestActive(reqId)) {
-                Log.d(TAG, "Reqest is not active");
-                return;
-            }
-
-            //run update task asociated with the request
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                @Override
-                public void run() {
-                    Log.d("UI thread", "Run update task on UI thread");
-                    UpdateUITask updateUITask= mRing.getTaskToUpdateUI(reqId);
-                    updateUITask.updateUI();
+                // Get Request
+                requestType = responseObject.has("responseType");
+                if (requestType) {
+                    Log.i(TAG, "Process get request");
+                    String responseType = responseObject.getString("responseType");
+                    int reqid = Integer.parseInt(responseObject.getString("reqid"));
+                    processGetResponse(responseObject.getJSONObject("data"),
+                            responseType.trim().toLowerCase(), reqid);
+                    return;
                 }
-            });*/
+
+                Log.e(TAG, "Bad Response. Ignore");
+            } catch (JSONException je) {
+                Log.e(TAG, "Failed to process response header");
+            }
+
         }
     }
 

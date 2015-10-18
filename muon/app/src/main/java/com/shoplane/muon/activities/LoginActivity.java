@@ -42,7 +42,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class LoginActivity extends Activity implements OnClickListener,
-        ConnectionCallbacks, OnConnectionFailedListener, AuthStatus {
+        ConnectionCallbacks, OnConnectionFailedListener {
     // Tag for logcat
     private static final String TAG = "LoginActivity";
     private static final String USER_NOT_LOGGEDIN = "User not loggedin";
@@ -181,20 +181,6 @@ public class LoginActivity extends Activity implements OnClickListener,
         }
     }
 
-    @Override
-    public void authStatus(boolean status) {
-        if (mProgressdialog.isShowing()) {
-            mProgressdialog.dismiss();
-        }
-
-        if (status) {
-            Toast.makeText(this, "Login Successful", Toast.LENGTH_LONG).show();
-            openFeedActivity();
-            finish();
-        } else {
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_LONG).show();
-        }
-    }
 
     private class LoginUserWithGPlus extends AsyncTask<Void, Void, Void> {
         private final String TAG = LoginUserWithGPlus.class.getSimpleName();
@@ -259,7 +245,6 @@ public class LoginActivity extends Activity implements OnClickListener,
                                 Intent feedActivityIntent = new Intent(mContext,
                                         FeedActivity.class);
                                 mContext.startActivity(feedActivityIntent);
-                                finish();
                             }
                         });
 
@@ -302,7 +287,23 @@ public class LoginActivity extends Activity implements OnClickListener,
     // 3 for FB login
     private void createSession(int mode, String userid, String userAccessToken) {
         SessionHandler.getInstance(this).createUserLoginSession(mode,
-                userid, userAccessToken,this);
+                userid, userAccessToken, new AuthStatus() {
+                    @Override
+                    public void authStatus(boolean status) {
+                        if (mProgressdialog.isShowing()) {
+                            mProgressdialog.dismiss();
+                        }
+
+                        if (status) {
+                            Log.i(TAG, "Login successful. Open feed activity");
+                            //Toast.makeText(LoginActivity.this, "Login Successful", Toast.LENGTH_LONG).show();
+                            openFeedActivity();
+                        } else {
+                            Log.i(TAG, "Login failed. Stay on Login activity");
+                           // Toast.makeText(LoginActivity.this, "Login Failed", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
     }
 
     protected void onStop() {
@@ -317,21 +318,26 @@ public class LoginActivity extends Activity implements OnClickListener,
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.gplus_signin_button:
-                mProgressdialog.setMessage("Logging with GPlus");
+                mProgressdialog.setMessage("Logging in with GPlus");
                 mProgressdialog.show();
                 signInWithGplus();
                 break;
             case R.id.fb_signin_button:
                 //signInWithFb();
-                mProgressdialog.setMessage("Logging with FaceBook");
+                mProgressdialog.setMessage("Logging in with FaceBook");
                 mProgressdialog.show();
                 mFbSignInClicked = true;
                 break;
             case R.id.skip_login_button:
-                openFeedActivity();
-                finish();
+                mProgressdialog.setMessage("Logging as Guest user");
+                mProgressdialog.show();
+                signInAsGuest();
                 break;
         }
+    }
+
+    private void signInAsGuest() {
+        createSession(Constants.GUEST_LOGIN, "", "");
     }
 
     private void openFeedActivity() {

@@ -1,10 +1,5 @@
 package com.shoplane.muon.common.helper;
 
-import android.view.View;
-
-import com.shoplane.muon.common.service.DeleteRequestService;
-import com.shoplane.muon.common.service.GetRequestService;
-import com.shoplane.muon.common.service.UpdateRequestService;
 import com.shoplane.muon.models.CatalogueItem;
 import com.shoplane.muon.models.WishlistItem;
 
@@ -70,30 +65,6 @@ public class WishlistHelper {
 
     public int getTotalItems() {
         return mTotalItems;
-    }
-
-    // Service to delete item from cart on server
-    private class RemoveFromWishlistService extends DeleteRequestService {
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-        }
-    }
-
-    // Service to add item to cart on server
-    private class AddToWishlistService extends UpdateRequestService {
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-        }
-    }
-
-    // Service to add item to cart on server
-    private class GetWishlistService extends GetRequestService {
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-        }
     }
 
     public List<WishlistItem> getWishlistItems(){
